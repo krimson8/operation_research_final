@@ -69,15 +69,37 @@ if __name__ == '__main__':
     	x[i] = m.addVar(lb=0, ub=1, vtype=GRB.INTEGER, name=landscape[i])
     
     # Add Objective and Constraints
-    ## Objective
+    ## Objective ti
     m.setObjective(quicksum(popularity[landscape[i]]*x[i] for i in range(NUM_SCAPE)), GRB.MAXIMIZE)                        
       
     ## constraint
+    ## 必選
+    cnt = 0
+    t = 0
+    for i in landscape:
+        if i == trip_landscape:
+            t = x[cnt]
+            cnt += 1
+            break
+    m.addConstr(t == 1, "user select")
+
     ### 旅行時間
-    m.addConstr(quicksum(x[i]*stay_time[i]<=trip_time for i in range(NUM_SCAPE)), "Trip Time")
+    cnt = 0
+    t = 0
+    for i in landscape:
+        t += stay_time[i]*x[cnt]
+        cnt += 1
+    #m.addConstr((quicksum(stay_time[landscape[i]]*x[i]) for i in range(NUM_SCAPE))<= trip_time, "Trip Time")
+    m.addConstr(t<= trip_time, "Trip Time")
 
     ### 旅費
-    m.addConstr(quicksum(x[i]*tick[i]<=trip_fee for i in range(NUM_SCAPE)), "Trip Fee")
+    cnt = 0
+    t = 0
+    for i in landscape:
+        t += ticket[i]*x[cnt]
+        cnt += 1
+    #m.addConstr((quicksum(tick[landscape[i]]*x[i]) for i in range(NUM_SCAPE))<= trip_fee, "Trip Fee")
+    m.addConstr(t<= trip_fee, "Trip Time")
 
     ###
 
@@ -85,12 +107,11 @@ if __name__ == '__main__':
     ###
     m.optimize()
 
-    for v in m.getVars():
-        print('%s'% name[v.varName])
-        print('%s %g' % (v.varName,v.x))
-        print('Obj: %g' % m.objVal)
 
+    #print('obj: %g' % m.objVal)
+
+    print('chosen landscape')
     for v in m.getVars():
+        #print('%g', v.x)
         if(v.x == 1):
-            print('%s %s %i %s' % (v.varName, name[v.varName], day[v.varName], order[v.varName]))
-
+            print('%s' % (v.varName))
